@@ -1,0 +1,261 @@
+# producer-filter-consumer
+
+ Table of Contents
+<!--table-of-contents_start-->
+* [AADL Architecture](#aadl-architecture)
+* [Bit-Codec Spec](#bit-codec-spec)
+* [Modify the AADL Model to Use Wire Protocol](#modify-the-aadl-model-to-use-wire-protocol)
+* [Linux](#linux)
+  * [HAMR Configuration: Linux](#hamr-configuration-linux)
+  * [Behavior Code: Linux](#behavior-code-linux)
+  * [How to Build/Run: Linux](#how-to-buildrun-linux)
+* [SeL4](#sel4)
+  * [HAMR Configuration: SeL4](#hamr-configuration-sel4)
+  * [Behavior Code: SeL4](#behavior-code-sel4)
+  * [How to Build/Run: SeL4](#how-to-buildrun-sel4)
+  * [Example Output: SeL4](#example-output-sel4)
+  * [CAmkES Architecture: SeL4](#camkes-architecture-sel4)
+  * [HAMR CAmkES Architecture: SeL4](#hamr-camkes-architecture-sel4)
+<!--table-of-contents_end-->
+
+
+## AADL Architecture
+<!--aadl-architecture_start-->
+![AADL Arch](aadl/diagrams/aadl-arch.png)
+|System: [PFC_Sys_Impl_Instance](aadl/PFC.aadl#L29) Properties|
+|--|
+|Domain Scheduling|
+|Wire Protocol|
+
+|[producer](aadl/PFC.aadl#L115) Properties|
+|--|
+|Native|
+|Periodic: 1000 ms|
+|Domain: 2|
+
+
+|[filter](aadl/PFC.aadl#L127) Properties|
+|--|
+|Native|
+|Periodic: 1000 ms|
+|Domain: 3|
+
+
+|[consumer](aadl/PFC.aadl#L140) Properties|
+|--|
+|Native|
+|Periodic: 1000 ms|
+|Domain: 4|
+
+
+**Schedule:** [domain_schedule.c](aadl/domain_schedule.c)
+<!--aadl-architecture_end-->
+
+## Bit-Codec Spec
+
+![spec](aadl/data/Mission.png)
+
+[aadl/data/Mission.sc](aadl/data/Mission.sc)
+
+Bit-Codec is not currently integrated with HAMR Codegen so the developers needs to create the bit-codec spec by hand and then call the bit-codec generator (e.g. [aadl/bin/bcgen.sh](aadl/bin/bcgen.sh)).  This will generate structured data types, encoders and decoders  (e.g. [hamr/slang/src/main/data/pfc/PFC/MissionBitCodec.scala](hamr/slang/src/main/data/pfc/PFC/MissionBitCodec.scala))
+
+The transpiler only includes Slang artifacts that are reachable from its apps option (e.g. [here](hamr/slang/bin/transpile.cmd#L54)) so the developer also needs to expliclity call the decoders/encoders/etc so that they are available at the C level (e.g. [hamr/slang/src/main/component/pfc/TranspilerToucher.scala](hamr/slang/src/main/component/pfc/TranspilerToucher.scala))
+
+An example workflow:
+```
+./aadl/bin/run-hamr-Linux.sh <path-to-FMIDE-executable>
+./aadl/bin/bcgen.sh
+```
+
+Developer 'touches' bit-codec artifacts and then runs the transpiler like below.  Note that the transpiler only needs to be rerun when/if Slang artifacts are modified.
+
+```
+./hamr/slang/bin/transpile.cmd
+```
+
+All these steps will be automated once HAMR integrates bit-codec generation as part of codegen.
+
+## Modify the AADL Model to Use Wire Protocol
+
+The following modifications must be made since bit-codec is not currently integrated as part of HAMR Codegen
+
+  - Attach ``HAMR::Bit_Codec_Raw_Connections => true;`` to the top-level system [PFC.aadl](aadl/PFC.aadl#L46)
+  - Use the ``HAMR::Bit_Codec_Max_Size`` property to specify the encoded size of each data component that is used by an event data or data port.  For example, see [Mission](aadl/PFC.aadl#L22) that is used by [producer_t.to_filter](aadl/PFC.aadl#L117)
+
+    - This property only needs to be attached to the top level data component (e.g. array subtypes and record field types do not need to be modified if they are not directly used by a port)
+
+    - HAMR will use the ``Memory_Properties::Data_Size`` annotation if present for types defined in [Base_Types](https://github.com/osate/osate2/blob/master/core/org.osate.contribution.sei/resources/packages/Base_Types.aadl).  The following unbounded types are not currently supported: ``Bases_Types::Boolean``, ``Base_Types::Character``, ``Base_Types::String``, ``Base_Types::Integer``, ``Base_Types::Float``
+
+  \* _Note: HAMR does not currently process the ``HAMR::Bit_Codec_Spec`` property annotation as seen [here](aadl/PFC.aadl#L21)_
+
+## Linux
+<!--Linux_start--><!--Linux_end-->
+
+### HAMR Configuration: Linux
+<!--hamr-configuration-linux_start-->
+To run HAMR Codegen, select [this](aadl/PFC.aadl#L29) system implementation in FMIDE's outline view and then click the
+HAMR button in the toolbar.  Use the following values in the dialog box that opens up (_&lt;example-dir&gt;_ is the directory that contains this readme file)
+
+Option Name|Value |
+|--|--|
+Platform|Linux|
+Output Directory|_&lt;example-dir&gt;_/hamr/slang|
+Base Package Name|pfc|
+|Exclude Slang Component Implementations|True/Checked|
+|Bit Width|32|
+|Max Sequence Size|3|
+|Max String Size|256|
+|C Output Directory|_&lt;example-dir&gt;_/hamr/c|
+
+You can have HAMR's FMIDE plugin generate verbose output and run the transpiler by setting the ``Verbose output`` and ``Run Transpiler``
+options that are located in __Preferences >> OSATE >> Sireum HAMR >> Code Generation__.
+
+
+
+<details>
+
+<summary>Click for instructions on how to run HAMR Codegen via the command line</summary>
+
+The script [aadl/bin/run-hamr-Linux.sh](aadl/bin/run-hamr-Linux.sh) uses an experimental OSATE/FMIDE plugin we've developed that
+allows you to run HAMR's OSATE/FMIDE plugin via the command line.  It has primarily been used/tested
+when installed in OSATE (not FMIDE) and under Linux so may not work as expected in FMIDE or
+under a different operating system. The script contains instructions on how to install the plugin.
+
+```
+./aadl/bin/run-hamr-Linux.sh <path-to-FMIDE-executable>
+```
+
+</details>
+<!--hamr-configuration-linux_end-->
+
+
+### Behavior Code: Linux
+<!--behavior-code-linux_start-->
+  * [producer](hamr/c/ext-c/producer_t_producer_producer/producer_t_producer_producer.c)
+
+  * [filter](hamr/c/ext-c/filter_t_filter_filter/filter_t_filter_filter.c)
+
+  * [consumer](hamr/c/ext-c/consumer_t_consumer_consumer/consumer_t_consumer_consumer.c)
+<!--behavior-code-linux_end-->
+
+
+### How to Build/Run: Linux
+<!--how-to-buildrun-linux_start-->
+If you didn't configure HAMR's FMIDE plugin to run the transpiler automatically then first run
+```
+./hamr/slang/bin/transpile.cmd
+```
+then 
+```
+./hamr/c/bin/compile.cmd
+./hamr/c/bin/run.sh
+./hamr/c/bin/stop.sh
+```
+<!--how-to-buildrun-linux_end-->
+
+
+## SeL4
+<!--SeL4_start--><!--SeL4_end-->
+
+### HAMR Configuration: SeL4
+<!--hamr-configuration-sel4_start-->
+To run HAMR Codegen, select [this](aadl/PFC.aadl#L29) system implementation in FMIDE's outline view and then click the
+HAMR button in the toolbar.  Use the following values in the dialog box that opens up (_&lt;example-dir&gt;_ is the directory that contains this readme file)
+
+Option Name|Value |
+|--|--|
+Platform|SeL4|
+Output Directory|_&lt;example-dir&gt;_/hamr/slang|
+Base Package Name|pfc|
+|Exclude Slang Component Implementations|True/Checked|
+|Bit Width|32|
+|Max Sequence Size|3|
+|Max String Size|256|
+|C Output Directory|_&lt;example-dir&gt;_/hamr/c|
+|seL4/CAmkES Output Directory|_&lt;example-dir&gt;_/hamr/camkes
+
+You can have HAMR's FMIDE plugin generate verbose output and run the transpiler by setting the ``Verbose output`` and ``Run Transpiler``
+options that are located in __Preferences >> OSATE >> Sireum HAMR >> Code Generation__.
+
+
+
+<details>
+
+<summary>Click for instructions on how to run HAMR Codegen via the command line</summary>
+
+The script [aadl/bin/run-hamr-SeL4.sh](aadl/bin/run-hamr-SeL4.sh) uses an experimental OSATE/FMIDE plugin we've developed that
+allows you to run HAMR's OSATE/FMIDE plugin via the command line.  It has primarily been used/tested
+when installed in OSATE (not FMIDE) and under Linux so may not work as expected in FMIDE or
+under a different operating system. The script contains instructions on how to install the plugin.
+
+```
+./aadl/bin/run-hamr-SeL4.sh <path-to-FMIDE-executable>
+```
+
+</details>
+<!--hamr-configuration-sel4_end-->
+
+
+### Behavior Code: SeL4
+<!--behavior-code-sel4_start-->
+  * [producer](hamr/c/ext-c/producer_t_producer_producer/producer_t_producer_producer.c)
+
+  * [filter](hamr/c/ext-c/filter_t_filter_filter/filter_t_filter_filter.c)
+
+  * [consumer](hamr/c/ext-c/consumer_t_consumer_consumer/consumer_t_consumer_consumer.c)
+<!--behavior-code-sel4_end-->
+
+
+### How to Build/Run: SeL4
+<!--how-to-buildrun-sel4_start-->
+If you didn't configure HAMR's FMIDE plugin to run the transpiler automatically then run
+```
+./hamr/slang/bin/transpile-sel4.cmd
+```
+then
+
+```
+./hamr/camkes/bin/run-camkes.sh -s
+```
+<!--how-to-buildrun-sel4_end-->
+
+
+### Example Output: SeL4
+<!--example-output-sel4_start-->
+Timeout = 18 seconds
+```
+Booting all finished, dropped to user space
+Entering pre-init of producer_t_producer_producer
+Entering pre-init of filter_t_filter_filter
+Leaving pre-init of filter_tEntering pre-init of consumer_t_consumer_consumer
+Leaving pre-init of consumer_t_consumer_consumer
+Leaving pre-init of producer_t_producer_producer
+_filter_filter
+PFC_Sys_Impl_Instance_filter_filter:     Approved Mission([Coordinate(1, 1, 1), Coordinate(2, 2, 2), Coordinate(3, 3, 3)])
+PFC_Sys_Impl_Instance_consumer_consumer: Received Mission([Coordinate(1, 1, 1), Coordinate(2, 2, 2), Coordinate(3, 3, 3)])
+PFC_Sys_Impl_Instance_filter_filter:     Approved Mission([Coordinate(7, 7, 7), Coordinate(8, 8, 8), Coordinate(9, 9, 9)])
+PFC_Sys_Impl_Instance_consumer_consumer: Received Mission([Coordinate(7, 7, 7), Coordinate(8, 8, 8), CoordinatePFC_Sys_Impl_Instance_filter_filter:     Approved Mission([Coordinate(1, 1, 1), Coordinate(2, 2, 2), Coordinate(3, 3, 3)])
+(9, 9, 9)])
+PFC_Sys_Impl_Instance_filter_filter:     Rejected Mission([Coordinate(4, 4, 4), Coordinate(5, 5, 5), Coordinate(6, 6, 6)])
+PFC_Sys_Impl_Instance_consumer_consumer: Received Mission([Coordinate(1, 1, 1), Coordinate(2, 2, 2), Coordinate(3, 3, 3)])
+PFC_Sys_Impl_Instance_filter_filter:     Approved Mission([Coordinate(7, 7, 7), Coordinate(8, 8, 8), Coordinate(9, 9, 9)])
+PFC_Sys_Impl_Instance_consumer_consumer: Received Mission([Coordinate(7, 7, 7), Coordinate(8, 8, 8), Coordinate(9, 9, 9)])
+PFC_Sys_Impl_Instance_filter_filter:     Approved Mission([Coordinate(1, 1, 1), Coordinate(2, 2, 2), Coordinate(3, 3, 3)])
+PFC_Sys_Impl_Instance_consumer_consumer: Received Mission([Coordinate(1, 1, 1), Coordinate(2, 2, 2), Coordinate(3, 3, 3)])
+PFC_Sys_Impl_Instance_filter_filter:     Rejected Mission([Coordinate(4, 4, 4), Coordinate(5, 5, 5), Coordinate(6, 6, 6)])
+
+```
+<!--example-output-sel4_end-->
+
+
+### CAmkES Architecture: SeL4
+<!--camkes-architecture-sel4_start-->
+![CAmkES Architecture: SeL4](aadl/diagrams/CAmkES-arch-SeL4.svg)
+<!--camkes-architecture-sel4_end-->
+
+
+### HAMR CAmkES Architecture: SeL4
+<!--hamr-camkes-architecture-sel4_start-->
+![HAMR CAmkES Architecture: SeL4](aadl/diagrams/CAmkES-HAMR-arch-SeL4.svg)
+<!--hamr-camkes-architecture-sel4_end-->
+

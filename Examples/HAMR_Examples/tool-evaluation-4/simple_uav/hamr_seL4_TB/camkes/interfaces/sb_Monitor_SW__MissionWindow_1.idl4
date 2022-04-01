@@ -1,0 +1,6 @@
+procedure sb_Monitor_SW__MissionWindow_1 {
+  include <sb_types.h>;
+  bool is_empty();
+  bool enqueue(refin sb_SW__MissionWindow_container m);
+  bool dequeue(out sb_SW__MissionWindow_container m);
+};

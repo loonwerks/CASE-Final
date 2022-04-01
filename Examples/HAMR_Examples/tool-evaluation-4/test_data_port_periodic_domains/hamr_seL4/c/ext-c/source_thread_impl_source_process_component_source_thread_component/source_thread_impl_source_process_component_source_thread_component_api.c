@@ -1,0 +1,94 @@
+#include <source_thread_impl_source_process_component_source_thread_component_api.h>
+#include <source_thread_impl_source_process_component_source_thread_component.h>
+
+static bool apis_initialized = false;
+static struct test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Initialization_Api initialization_api;
+static struct test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Operational_Api operational_api;
+
+static void initialize_apis(STACK_FRAME_ONLY) {
+  DeclNewStackFrame(caller, "source_thread_impl_source_process_component_source_thread_component.c", "", "initialize_apis", 0);
+
+  // Option_0975EB = Option[test_data_port_periodic_domains.test_data_port_periodic_domains.source_thread_impl_Initialization_Api]
+  Option_0975EB_get_(SF (test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Initialization_Api) &initialization_api, test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_Bridge_c_initialization_api(SF_LAST));
+  // Option_818AC5 = Option[test_data_port_periodic_domains.test_data_port_periodic_domains.source_thread_impl_Operational_Api]
+  Option_818AC5_get_(SF (test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Operational_Api) &operational_api, test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_Bridge_c_operational_api(SF_LAST));
+  apis_initialized = true;
+}
+
+// This file was auto-generated.  Do not edit
+
+void api_put_write_port__test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component(
+  STACK_FRAME
+  S8 value) {
+  DeclNewStackFrame(caller, "source_thread_impl_source_process_component_source_thread_component_api.c", "", "api_put_write_port__test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component", 0);
+
+  if(!apis_initialized) { initialize_apis(SF_LAST); }
+
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Initialization_Api_put_write_port_(
+    SF
+    &initialization_api,
+    value);
+}
+
+void api_logInfo__test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component(
+  STACK_FRAME
+  String str) {
+  DeclNewStackFrame(caller, "source_thread_impl_source_process_component_source_thread_component_api.c", "", "api_logInfo__test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component", 0);
+
+  if(!apis_initialized) { initialize_apis(SF_LAST); }
+
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Initialization_Api_logInfo_(
+    SF
+    &initialization_api,
+    str);
+}
+
+void api_logDebug__test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component(
+  STACK_FRAME
+  String str) {
+  DeclNewStackFrame(caller, "source_thread_impl_source_process_component_source_thread_component_api.c", "", "api_logDebug__test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component", 0);
+
+  if(!apis_initialized) { initialize_apis(SF_LAST); }
+
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Initialization_Api_logDebug_(
+    SF
+    &initialization_api,
+    str);
+}
+
+void api_logError__test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component(
+  STACK_FRAME
+  String str) {
+  DeclNewStackFrame(caller, "source_thread_impl_source_process_component_source_thread_component_api.c", "", "api_logError__test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component", 0);
+
+  if(!apis_initialized) { initialize_apis(SF_LAST); }
+
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Initialization_Api_logError_(
+    SF
+    &initialization_api,
+    str);
+}
+
+Unit test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_initialise(
+  STACK_FRAME
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Initialization_Api api) {
+  DeclNewStackFrame(caller, "source_thread_impl_source_process_component_source_thread_component_api.c", "", "test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_initialise", 0);
+
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_initialise_(SF_LAST);
+}
+
+Unit test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_finalise(
+  STACK_FRAME
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Operational_Api api) {
+  DeclNewStackFrame(caller, "source_thread_impl_source_process_component_source_thread_component_api.c", "", "test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_finalise", 0);
+
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_finalise_(SF_LAST);
+}
+
+Unit test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_timeTriggered(
+  STACK_FRAME
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_Operational_Api api) {
+  DeclNewStackFrame(caller, "source_thread_impl_source_process_component_source_thread_component_api.c", "", "test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_timeTriggered", 0);
+
+  test_data_port_periodic_domains_test_data_port_periodic_domains_source_thread_impl_source_process_component_source_thread_component_timeTriggered_(SF_LAST);
+}

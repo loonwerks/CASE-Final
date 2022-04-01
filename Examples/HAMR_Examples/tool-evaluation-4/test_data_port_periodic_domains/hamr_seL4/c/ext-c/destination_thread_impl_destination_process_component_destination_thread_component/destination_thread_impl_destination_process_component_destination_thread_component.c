@@ -1,0 +1,25 @@
+#include <destination_thread_impl_destination_process_component_destination_thread_component_api.h>
+#include <destination_thread_impl_destination_process_component_destination_thread_component.h>
+#include <ext.h>
+
+// This file will not be overwritten so is safe to edit
+
+static char* component_id = "top_impl_Instance_destination_process_component_destination_thread_component";
+
+Unit test_data_port_periodic_domains_test_data_port_periodic_domains_destination_thread_impl_destination_process_component_destination_thread_component_initialise_(STACK_FRAME_ONLY) {
+  DeclNewStackFrame(caller, "destination_thread_impl_destination_process_component_destination_thread_component.c", "", "test_data_port_periodic_domains_test_data_port_periodic_domains_destination_thread_impl_destination_process_component_destination_thread_component_initialise_", 0);
+}
+
+Unit test_data_port_periodic_domains_test_data_port_periodic_domains_destination_thread_impl_destination_process_component_destination_thread_component_finalise_(STACK_FRAME_ONLY) {
+  DeclNewStackFrame(caller, "destination_thread_impl_destination_process_component_destination_thread_component.c", "", "test_data_port_periodic_domains_test_data_port_periodic_domains_destination_thread_impl_destination_process_component_destination_thread_component_finalise_", 0);
+}
+
+Unit test_data_port_periodic_domains_test_data_port_periodic_domains_destination_thread_impl_destination_process_component_destination_thread_component_timeTriggered_(STACK_FRAME_ONLY) {
+  DeclNewStackFrame(caller, "destination_thread_impl_destination_process_component_destination_thread_component.c", "", "test_data_port_periodic_domains_test_data_port_periodic_domains_destination_thread_impl_destination_process_component_destination_thread_component_timeTriggered_", 0);
+
+  S8 t0;
+  if(api_get_read_port__test_data_port_periodic_domains_test_data_port_periodic_domains_destination_thread_impl_destination_process_component_destination_thread_component(SF &t0)) {
+    // could alternatively use the api logInfo method
+    printf("%s: Received %d on data port read_port\n", component_id, t0);
+  }
+}

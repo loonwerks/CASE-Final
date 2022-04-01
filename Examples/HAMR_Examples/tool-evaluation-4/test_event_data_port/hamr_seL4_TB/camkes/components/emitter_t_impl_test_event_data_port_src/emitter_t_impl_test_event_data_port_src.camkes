@@ -1,0 +1,9 @@
+import "../../interfaces/sb_Monitor_int8_t_1.idl4";
+import <std_connector.camkes>;
+component emitter_t_impl_test_event_data_port_src {
+  include <sb_types.h>;
+  control;
+  uses sb_Monitor_int8_t_1 sb_enq0;
+  consumes Notification sb_periodic_dispatch_notification;
+  has semaphore sb_dispatch_sem;
+}
