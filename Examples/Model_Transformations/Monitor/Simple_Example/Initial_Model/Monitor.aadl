@@ -1,0 +1,77 @@
+package Monitor
+public
+	with CASE_Model_Transformations;
+	with CASE_Properties;
+	with Base_Types;
+	renames AGREE_PLTL::all;
+
+	thread RadioDriver
+		features
+			recv_message: in event data port;
+			command_message: out event data port CASE_Model_Transformations::CASE_RF_Msg.Impl;
+			alert: in event data port Base_Types::Boolean;
+		properties
+			CASE_Properties::Comm_Driver => true;
+	end RadioDriver;
+
+	thread implementation RadioDriver.Impl
+		properties
+			Dispatch_Protocol => Periodic;
+	end RadioDriver.Impl;
+
+	thread Component_A
+		features
+			recv_command: in event data port CASE_Model_Transformations::CASE_RF_Msg.Impl;
+			status: out event data port Base_types::Boolean;
+		annex agree {**
+			guarantee "Component status shall never be false" : status;
+		**};
+	end Component_A;
+
+	thread implementation Component_A.Impl
+		properties
+			Dispatch_Protocol => Sporadic;
+	end Component_A.Impl;
+
+	process SW
+		features
+			input: in event data port;
+			reset: in event data port Base_Types::Boolean;
+			sensor: in event data port Base_Types::Boolean;
+			output: out event data port Base_Types::Boolean;
+		annex agree {**
+			guarantee "Output status shall never be false" : output;
+		**};
+	end SW;
+
+	process implementation SW.Impl
+		subcomponents
+			Radio: thread RadioDriver.Impl;
+			Comp_A: thread Component_A.Impl;
+		connections
+			c1: port input -> Radio.recv_message;
+			c2: port Radio.command_message -> Comp_A.recv_command;
+			c3: port Comp_A.status -> output;
+		annex resolute {**
+			prove(Req_Response(this.Comp_A))
+			prove(Req_CorrectOutput(this.Comp_A))
+		**};
+	end SW.Impl;
+	
+	system Sys
+		features
+			input: in event data port;
+			sensor: in event data port Base_Types::Boolean;
+			output: out event data port Base_Types::Boolean;
+	end Sys;
+	
+	system implementation Sys.Impl
+		subcomponents
+			SW: process SW.Impl;
+		connections
+			c1: port input -> SW.input;
+			c2: port sensor -> SW.sensor;
+			c3: port SW.output -> output;
+	end Sys.Impl;
+	
+end Monitor;

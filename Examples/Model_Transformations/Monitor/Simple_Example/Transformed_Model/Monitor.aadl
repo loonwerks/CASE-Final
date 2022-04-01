@@ -1,0 +1,140 @@
+package Monitor
+public
+	with CASE_Model_Transformations;
+	with CASE_Properties;
+	with Base_Types;
+	renames AGREE_PLTL::all;
+
+	thread RadioDriver
+		features
+			recv_message: in event data port;
+			command_message: out event data port CASE_Model_Transformations::CASE_RF_Msg.Impl;
+			alert: in event data port Base_Types::Boolean;
+		properties
+			CASE_Properties::Comm_Driver => true;
+	end RadioDriver;
+
+	thread implementation RadioDriver.Impl
+		properties
+			Dispatch_Protocol => Periodic;
+	end RadioDriver.Impl;
+
+	thread Component_A
+		features
+			recv_command: in event data port CASE_Model_Transformations::CASE_RF_Msg.Impl;
+			status: out event data port Base_types::Boolean;
+		annex agree {**
+			guarantee "Component status shall never be false" : status;
+		**};
+	end Component_A;
+
+	thread implementation Component_A.Impl
+		properties
+			Dispatch_Protocol => Sporadic;
+	end Component_A.Impl;
+
+	thread ResponseMonitor
+		features
+			Observed: in event data port Base_Types::Boolean;
+			Command: in event data port CASE_Model_Transformations::CASE_RF_Msg.Impl;
+			Alert: out event data port Base_Types::Boolean;
+			Reset: in event data port Base_Types::Boolean;
+		properties
+			CASE_Properties::Monitoring => 100;
+			CASE_Properties::Component_Spec => ("ResponseMonitor_Alert");
+		annex agree {**
+			-- Monitor policy (models the expected behavior in terms of the input ports)
+			-- status (Observed) occurs within two time steps of receiving a command (Command)
+			const is_latched : bool = false;
+			eq empty_day : bool = not event(Observed) and not event(Command);
+			property ResponseMonitor_policy = Historically(event(Command) or 
+							(empty_day and 
+								Yesterday(event(Command) or (empty_day and Yesterday(event(Command))))
+							) => event(Observed)
+						);
+			property alerted = (not ResponseMonitor_policy) -> 
+							((is_latched and pre(alerted)) or (event(Observed) and not ResponseMonitor_policy));
+			guarantee ResponseMonitor_Alert "A violation of the monitor policy shall trigger an alert" : 
+							event(Alert) <=> alerted;
+		**};
+	end ResponseMonitor;
+
+	thread implementation ResponseMonitor.Impl
+		properties
+			Dispatch_Protocol => Sporadic;
+	end ResponseMonitor.Impl;
+
+	thread CorrectnessMonitor
+		features
+			Observed: in event data port Base_Types::Boolean;
+			Sensor: in event data port Base_Types::Boolean;
+			Alert: out event data port Base_Types::Boolean;
+			Output: out event data port Base_Types::Boolean;
+		properties
+			CASE_Properties::Monitoring => 100;
+			CASE_Properties::Component_Spec => ("CorrectnessMonitor_Alert", "CorrectnessMonitor_Output");
+		annex agree {**
+			const is_latched : bool = false;
+			property alerted = (not (Observed = Sensor)) -> ((is_latched and pre(alerted)) or (event(Observed) and not (Observed = Sensor)));
+			guarantee CorrectnessMonitor_Alert "A violation of the monitor policy shall trigger an alert" : event(Alert) <=> alerted;
+			guarantee CorrectnessMonitor_Output "A violation of the monitor policy shall prevent propagation of the observed input." : 
+				if alerted then not event(Output) else event(Output) and Output = Observed;
+		**};
+	end CorrectnessMonitor;
+
+	thread implementation CorrectnessMonitor.Impl
+		properties
+			Dispatch_Protocol => Sporadic;
+	end CorrectnessMonitor.Impl;
+
+	process SW
+		features
+			input: in event data port;
+			reset: in event data port Base_Types::Boolean;
+			sensor: in event data port Base_Types::Boolean;
+			output: out event data port Base_Types::Boolean;
+		annex agree {**
+			guarantee "Output status shall never be false" : output;
+		**};
+	end SW;
+
+	process implementation SW.Impl
+		subcomponents
+			Radio: thread RadioDriver.Impl;
+			Comp_A: thread Component_A.Impl;
+			ResponseMonitor: thread ResponseMonitor.Impl;
+			CorrectnessMonitor: thread CorrectnessMonitor.Impl;
+		connections
+			c1: port input -> Radio.recv_message;
+			c2: port Radio.command_message -> Comp_A.recv_command;
+			c3: port CorrectnessMonitor.Output -> output;
+			c4: port Comp_A.status -> ResponseMonitor.Observed;
+			c5: port Radio.command_message -> ResponseMonitor.Command;
+			c6: port ResponseMonitor.Alert -> Radio.alert;
+			c7: port reset -> ResponseMonitor.Reset;
+			c8: port Comp_A.status -> CorrectnessMonitor.Observed;
+			c9: port sensor -> CorrectnessMonitor.Sensor;
+			c10: port CorrectnessMonitor.Alert -> Radio.alert;
+		annex resolute {**			
+			prove Req_Response(this.Comp_A, this.ResponseMonitor, this.ResponseMonitor.Alert)
+			prove Req_CorrectOutput(this.Comp_A, this.CorrectnessMonitor, this.CorrectnessMonitor.Alert, this, Base_Types::Boolean)
+		**};
+	end SW.Impl;
+
+	system Sys
+		features
+			input: in event data port;
+			sensor: in event data port Base_Types::Boolean;
+			output: out event data port Base_Types::Boolean;
+	end Sys;
+
+	system implementation Sys.Impl
+		subcomponents
+			SW: process SW.Impl;
+		connections
+			c1: port input -> SW.input;
+			c2: port sensor -> SW.sensor;
+			c3: port SW.output -> output;
+	end Sys.Impl;
+
+end Monitor;

@@ -1,0 +1,21 @@
+package CASE_Requirements
+private
+	annex resolute {**
+		goal Req_Response(comp_context : component) <=
+			** "[response_monitor] Component Comp_A shall be monitored for responsiveness" **
+			context Generated_By : "GearCASE";
+			context Generated_On : "Jan 29, 2020";
+			context Req_Component : "Monitor::SW.Impl.Comp_A";
+			context Formalized : "False";
+			undeveloped
+			
+		goal Req_CorrectOutput(comp_context : component) <=
+			** "[correctness_monitor] Component Comp_A shall be monitored for correct output" **
+			context Generated_By : "GearCASE";
+			context Generated_On : "Jan 29, 2020";
+			context Req_Component : "Monitor::SW.Impl.Comp_A";
+			context Formalized : "False";
+			undeveloped
+		
+	**};
+end CASE_Requirements;

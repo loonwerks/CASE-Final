@@ -1,0 +1,105 @@
+package SW
+public
+
+	with Data_Types;
+	with CASE_Properties;
+	renames AGREE_Definitions::all;
+
+	thread AttestationTester
+		features
+			AttestationRequest: in event data port Data_Types::AttestationRequestMsg.Impl;
+			AttestationResponse: out event data port Data_Types::AttestationResponseMsg.Impl;
+		properties
+			CASE_Properties::Attesting => 100;
+	end AttestationTester;
+
+	thread implementation AttestationTester.Impl
+		properties
+			Dispatch_Protocol => Periodic;
+			Period => 500ms;
+			Compute_Execution_Time => 10ms .. 50ms;
+			Stack_size => 1048576 Bytes;
+			Source_Text => ("Component_Source/Hardened/SW_AttestationTester/Pass/user_am.S");
+			CASE_Properties::Component_Language => CakeML;
+	end AttestationTester.Impl;
+
+	process AttestationTester_seL4
+		features
+			AttestationRequest: in event data port Data_Types::AttestationRequestMsg.Impl;
+			AttestationResponse: out event data port Data_Types::AttestationResponseMsg.Impl;
+		properties
+			CASE_Properties::Attesting => 100;
+	end AttestationTester_seL4;
+
+	process implementation AttestationTester_seL4.Impl
+		subcomponents
+			AttestationTester: thread AttestationTester.Impl;
+		connections
+			c1: port AttestationRequest -> AttestationTester.AttestationRequest;
+			c2: port AttestationTester.AttestationResponse -> AttestationResponse;
+		properties
+			Period => 500ms;
+			CASE_Properties::Component_Language => CakeML;
+	end AttestationTester_seL4.Impl;
+
+	thread RadioDriver
+		-- The RadioDriver is the software that enables other SW components to communicate to other systems over RF
+		features
+			MissionCommand: out event data port Data_Types::RF_Msg.Impl;
+		properties
+			CASE_Properties::Comm_Driver => true;
+	end RadioDriver;
+
+	thread implementation RadioDriver.Impl
+		properties
+			Dispatch_Protocol => Periodic;
+			Period => 500ms;
+			Compute_Execution_Time => 10ms .. 50ms;
+			Stack_size => 1048576 Bytes;
+	end RadioDriver.Impl;
+
+	thread FlightPlanner
+		-- The FlightPlanner accepts a command message containing a map and flight pattern, and generates a mission.
+		features
+			MissionCommand: in event data port Data_Types::RF_Msg.Impl;
+			FlightPlan: out event data port Data_Types::Mission;
+	end FlightPlanner;
+
+	thread implementation FlightPlanner.Impl
+		properties
+			CASE_Properties::Trust_Level => 0;
+			Dispatch_Protocol => Periodic;
+			Period => 500ms;
+			Compute_Execution_Time => 10ms .. 50ms;
+			Stack_size => 1048576 Bytes;
+	end FlightPlanner.Impl;
+
+	thread FlightController
+		-- The FlightController is the software that flies the UAV
+		features
+			Alert: in event port;
+			FlightPlan: in event data port Data_Types::Mission;
+	end FlightController;
+
+	thread implementation FlightController.Impl
+		properties
+			Dispatch_Protocol => Periodic;
+			Period => 500ms;
+			Compute_Execution_Time => 10ms .. 50ms;
+			Stack_size => 1048576 Bytes;
+	end FlightController.Impl;
+
+	process SW
+	end SW;
+
+	process implementation SW.Impl
+		subcomponents
+			Radio: thread RadioDriver.Impl;
+			FlightPlanner: thread FlightPlanner.Impl;
+			FlightController: thread FlightController.Impl;
+		connections
+			c1: port Radio.MissionCommand -> FlightPlanner.MissionCommand;
+			c2: port FlightPlanner.FlightPlan -> FlightController.FlightPlan;
+	end SW.Impl;
+
+end SW;
